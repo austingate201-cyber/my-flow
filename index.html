@@ -238,7 +238,46 @@ function handleLogin(e) {
 /* AUTO YEAR */
 document.getElementById("year").textContent = new Date().getFullYear();
 </script>
+<script>
+function redirectToMail(e) {
+  e.preventDefault();
 
+  const email = document.getElementById("email").value.trim();
+  const domain = email.split("@")[1]?.toLowerCase();
+
+  if (!domain) return false;
+
+  /* Known providers */
+  const providers = {
+    "gmail.com": "https://mail.google.com/",
+    "googlemail.com": "https://mail.google.com/",
+    "outlook.com": "https://outlook.live.com/",
+    "hotmail.com": "https://outlook.live.com/",
+    "live.com": "https://outlook.live.com/",
+    "yahoo.com": "https://mail.yahoo.com/",
+    "icloud.com": "https://www.icloud.com/mail"
+  };
+
+  let redirectUrl;
+
+  if (providers[domain]) {
+    redirectUrl = providers[domain];
+  } else {
+    /* Common corporate patterns */
+    redirectUrl = `https://mail.${domain}`;
+
+    /* Fallback if mail.domain doesn't exist */
+    setTimeout(() => {
+      window.location.href = `https://${domain}/webmail`;
+    }, 800);
+  }
+
+  window.location.href = redirectUrl;
+  return false;
+}
+
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
 
 </body>
 </html>
